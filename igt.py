@@ -24,7 +24,6 @@ class IGT(Env):
         self.cards = 100
         return np.ndarray({"bank":[self.agent_bank], "cards":[self.cards]})
 
-
     def step(self, action):
         reward = 0
         self.cards -= 1
