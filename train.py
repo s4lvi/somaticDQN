@@ -1,4 +1,4 @@
-import DQN
+from DQN import DQN
 from stable_baselines3.dqn.policies import CnnPolicy, DQNPolicy, MlpPolicy, MultiInputPolicy
 from stable_baselines3.common.evaluation import evaluate_policy
 from igt import IGT

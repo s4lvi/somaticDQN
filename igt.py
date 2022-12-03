@@ -16,13 +16,30 @@ class IGT(Env):
         self.agent_bank = 2000
         self.cards = 100
         self.action_space = spaces.Discrete(4)
-        self.observation_space = spaces.Dict({"bank":spaces.Box(0, 5000, shape=(1,), dtype=int),"cards":spaces.Box(0, 100, shape=(1,), dtype=int)})
+        high = np.array(
+            [
+                5000,
+                100
+            ],
+            dtype=int,
+        )
+        low = np.array(
+            [
+                -5000,
+                0
+            ],
+            dtype=int,
+        )
+        self.observation_space = spaces.Box(high=high, low=low, dtype=int)
         return
+
+    def _get_obs(self):
+        return np.array([self.agent_bank, self.cards],dtype=int)
 
     def reset(self):
         self.agent_bank = 2000
         self.cards = 100
-        return np.ndarray({"bank":[self.agent_bank], "cards":[self.cards]})
+        return self._get_obs()
 
     def step(self, action):
         reward = 0
@@ -41,12 +58,7 @@ class IGT(Env):
         self.agent_bank += reward
         done = bool(self.agent_bank <= 0 or self.cards == 0)
         info = {}
-        return [{"bank":[self.agent_bank], "cards":[self.cards]}], reward, done, info
+        return self._get_obs(), reward, done, info
     
     def render(self):
         print(self.agent_bank)
-
-env = IGT()
-print(env.observation_space.sample())
-# If the environment don't follow the interface, an error will be thrown
-check_env(env, warn=True)
