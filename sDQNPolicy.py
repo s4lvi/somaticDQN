@@ -117,4 +117,4 @@ class sDQNPolicy(BasePolicy):
         self.training = mode
 
 
-MlpPolicy = DQNPolicy
+MlpPolicy = sDQNPolicy

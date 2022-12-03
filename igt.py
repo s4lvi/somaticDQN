@@ -45,17 +45,19 @@ class IGT(Env):
         reward = 0
         self.cards -= 1
         if (action == 0 or action == 1):
-            reward = 100
+            self.agent_bank += 100
+            reward = 1
             if (random.randint(0,1)):
-                reward = -150
+                self.agent_bank -= 150
+                reward = -1
         elif (action == 2 or action == 3):
-            reward = 50
+            self.agent_bank += 50
+            reward = 1
             if (random.randint(0,1)):
                 reward = 0
         else: 
             raise ValueError("Received invalid action={} which is not part of the action space".format(action)) 
 
-        self.agent_bank += reward
         done = bool(self.agent_bank <= 0 or self.cards == 0)
         info = {}
         return self._get_obs(), reward, done, info
