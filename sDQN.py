@@ -14,7 +14,7 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.common.utils import get_linear_fn, get_parameters_by_name, is_vectorized_observation, polyak_update
 from stable_baselines3.dqn.policies import CnnPolicy, DQNPolicy, MlpPolicy, MultiInputPolicy
 
-from sDQNPolicy import sDQNPolicy;
+from sDQNPolicy import sDQNPolicy
 """
 Modification of the Stable Baselines 3 Deep Q-Network implementation.
 Addition of somatic introspection network to emulate somatic marker hypothesis (https://pubmed.ncbi.nlm.nih.gov/8941953/)
@@ -31,6 +31,7 @@ class sDQN(OffPolicyAlgorithm):
         "MlpPolicy": MlpPolicy,
         "CnnPolicy": CnnPolicy,
         "MultiInputPolicy": MultiInputPolicy,
+        "SDQNPolicy": sDQNPolicy,
     }
 
     def __init__(

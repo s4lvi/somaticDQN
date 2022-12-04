@@ -39,9 +39,11 @@ class IGT(Env):
     def reset(self):
         self.agent_bank = 2000
         self.cards = 100
+        #print("RESET")
         return self._get_obs()
 
     def step(self, action):
+        #print("action-", action)
         reward = 0
         self.cards -= 1
         if (action == 0 or action == 1):
@@ -60,6 +62,7 @@ class IGT(Env):
 
         done = bool(self.agent_bank <= 0 or self.cards == 0)
         info = {}
+        #print(self.agent_bank)
         return self._get_obs(), reward, done, info
     
     def render(self):
