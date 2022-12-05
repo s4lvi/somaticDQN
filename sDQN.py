@@ -22,15 +22,12 @@ by JM Salvi
 """
 
 
-DQNSelf = TypeVar("DQNSelf", bound="DQN")
+sDQNSelf = TypeVar("sDQNSelf", bound="SDQN")
 
 
 class sDQN(OffPolicyAlgorithm):
 
     policy_aliases: Dict[str, Type[BasePolicy]] = {
-        "MlpPolicy": MlpPolicy,
-        "CnnPolicy": CnnPolicy,
-        "MultiInputPolicy": MultiInputPolicy,
         "SDQNPolicy": sDQNPolicy,
     }
 
@@ -160,7 +157,7 @@ class sDQN(OffPolicyAlgorithm):
                 # Compute the next Q-values using the target network
                 next_q_values = self.q_net_target(replay_data.next_observations)
                 # Follow greedy policy: use the one with the highest value
-                next_q_values, _ = next_q_values.max(dim=1)
+                next_q_values, _ = next_q_values.max(dim=0)
                 # Avoid potential broadcast issue
                 next_q_values = next_q_values.reshape(-1, 1)
                 # 1-step TD target
@@ -170,7 +167,7 @@ class sDQN(OffPolicyAlgorithm):
             current_q_values = self.q_net(replay_data.observations)
 
             # Retrieve the q-values for the actions from the replay buffer
-            current_q_values = th.gather(current_q_values, dim=1, index=replay_data.actions.long())
+            #current_q_values = th.gather(current_q_values, dim=0, index=replay_data.actions.long())
 
             # Compute Huber loss (less sensitive to outliers)
             loss = F.smooth_l1_loss(current_q_values, target_q_values)
@@ -219,14 +216,14 @@ class sDQN(OffPolicyAlgorithm):
         return action, state
 
     def learn(
-        self: DQNSelf,
+        self: sDQNSelf,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
         tb_log_name: str = "DQN",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> DQNSelf:
+    ) -> sDQNSelf:
 
         return super().learn(
             total_timesteps=total_timesteps,

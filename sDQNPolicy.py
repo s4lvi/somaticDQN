@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Type
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union, Any
 
 import gym
 import torch as th
@@ -14,10 +14,10 @@ from stable_baselines3.common.torch_layers import (
 )
 from stable_baselines3.common.type_aliases import Schedule
 
-
-class QNetwork(BasePolicy):
+class SQNetwork(BasePolicy):
     """
     Action-Value (Q-Value) network for DQN
+
     :param observation_space: Observation space
     :param action_space: Action space
     :param net_arch: The specification of the policy and value networks.
@@ -43,30 +43,47 @@ class QNetwork(BasePolicy):
             normalize_images=normalize_images,
         )
 
-        if net_arch is None:
-            net_arch = [64, 64]
-
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.features_extractor = features_extractor
         self.features_dim = features_dim
         self.normalize_images = normalize_images
         action_dim = self.action_space.n  # number of actions
-        q_net = create_mlp(self.features_dim, action_dim, self.net_arch, self.activation_fn)
-        self.q_net = nn.Sequential(*q_net)
+      #  q_net = create_mlp(self.features_dim, action_dim, self.net_arch, self.activation_fn)
+        self.q_net1 = nn.Linear(self.features_dim, 64)
+        self.q_net2 = nn.Sequential(
+            nn.ReLU(),
+            nn.Linear(64, action_dim)
+        )
+
+        self.s_net = nn.Sequential(
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 8)
+        )
+        self.out_net = nn.Linear(action_dim + 8, action_dim)
 
     def forward(self, obs: th.Tensor) -> th.Tensor:
         """
         Predict the q-values.
+
         :param obs: Observation
         :return: The estimated Q-Value for each action.
         """
-        return self.q_net(self.extract_features(obs))
+        q1 = self.q_net1(self.extract_features(obs))
+        q2 = self.q_net2(q1[-1])
+        #print("Q1", q1[-1])
+        #print("Q2", q2)
+        s = self.s_net(q1[-1])
+        #print("S", s)
+        cat = th.cat((q2.flatten(), s.flatten()), 0)
+        return self.out_net(cat)
 
     def _predict(self, observation: th.Tensor, deterministic: bool = True) -> th.Tensor:
         q_values = self(observation)
         # Greedy action
-        action = q_values.argmax(dim=1).reshape(-1)
+        #print("Q VALUES", q_values)
+        action = q_values.argmax(dim=0).reshape(-1)
         return action
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
@@ -82,7 +99,6 @@ class QNetwork(BasePolicy):
         )
         return data
 
-
 class sDQNPolicy(BasePolicy):
 
     def __init__(
@@ -90,7 +106,7 @@ class sDQNPolicy(BasePolicy):
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[List[int]] = None,
+        net_arch: Optional[List[int]] = [64, 64],
         activation_fn: Type[nn.Module] = nn.ReLU,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
@@ -106,12 +122,6 @@ class sDQNPolicy(BasePolicy):
             optimizer_class=optimizer_class,
             optimizer_kwargs=optimizer_kwargs,
         )
-
-        if net_arch is None:
-            if features_extractor_class == NatureCNN:
-                net_arch = []
-            else:
-                net_arch = [64, 64]
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn
@@ -146,10 +156,10 @@ class sDQNPolicy(BasePolicy):
         # Setup optimizer with initial learning rate
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 
-    def make_q_net(self) -> QNetwork:
+    def make_q_net(self) -> SQNetwork:
         # Make sure we always have separate networks for features extractors etc
         net_args = self._update_features_extractor(self.net_args, features_extractor=None)
-        return QNetwork(**net_args).to(self.device)
+        return SQNetwork(**net_args).to(self.device)
 
     def forward(self, obs: th.Tensor, deterministic: bool = True) -> th.Tensor:
         return self._predict(obs, deterministic=deterministic)
